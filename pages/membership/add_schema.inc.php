@@ -60,6 +60,7 @@ $form->addAnything('<strong>Structure</strong>', <<<HTML
                     <option value="">Select Database Column</option>
                     {$columns}
                 </select>
+                <p>Note: This feild will not work to advance field dropdown list</p>
             </div>
             <div id="advForm1" class="d-none flex-column my-3">
                 <div class="d-block">
@@ -86,136 +87,155 @@ HTML);
 
 echo $form->printOut();
 ?>
+
 <script>
-    let area = $('#editableArea')
-    let addRow = $('.addRow')
-    let template = `
-    <div id="detailrow{column}" class="d-flex flex-column col-12">
-        <label id="label-1"><strong>Field <b id="columnName{column}"></b></strong></label>
+let area = $('#editableArea')
+let addRow = $('.addRow')
+let template = 
+`<div id="detailrow{column}" class="d-flex flex-column col-12">
+    <label id="label-{column}"><strong>Field <b id="columnName{column}"></b></strong></label>
+    <div class="d-flex flex-row">
+        <input type="text" class="columnName form-control col-4 noAutoFocus" data-label="{column}" name="column[{column}][name]" placeholder="Label that will appear on the form"/>
+        <select class="form-control col-1 noAutoFocus" name="column[{column}][is_required]">
+            <option value="1">Required</option>
+            <option value="0">Optional</option>
+        </select>
+        <select class="form-control col-3 noAutoFocus" name="column[{column}][field]" data-row="{column}">
+            <option value="">Select Database Column</option>
+            <?= $columns ?>
+        </select>
+        <button class="deleteRow notAJAX btn btn-danger" data-remove="{column}"><i class="fa fa-trash"></i></button>
+    </div>
+    <div id="advForm{column}" class="d-none flex-column my-3">
+        <div class="d-block">
+            <span><strong>Advanced Field</strong></span>
+        </div>
         <div class="d-flex flex-row">
-            <input type="text" class="columnName form-control col-4 noAutoFocus" data-label="{column}" name="column[{column}][name]" placeholder="Label that will appear on the form"/>
-            <select class="form-control col-1 noAutoFocus" name="column[{column}][is_required]">
-                <option value="1">Required</option>
-                <option value="0">Optional</option>
+            <input type="text" class="form-control col-6 noAutoFocus" name="column[{column}][advfield]" placeholder="Column name in database"/>
+            <select class="form-control col-4 noAutoFocus advFieldType" data-column="{column}" name="column[{column}][advfieldtype]">
+                <option value="">Select</option>
+                <option value="int">Number</option>
+                <option value="varchar">Short Text</option>
+                <option value="text">Paragraph Text</option>
+                <option value="enum">Dropdown List</option>
+                <option value="enum_radio">Radio List</option>
+                <option value="text_multiple">Multiple Choice</option>
             </select>
-            <select class="form-control col-3 noAutoFocus" name="column[{column}][field]" data-row="{column}">
-                <option value="">Select Database Column</option>
-                <?= $columns ?>
-            </select>
-            <button class="deleteRow notAJAX btn btn-danger" data-remove="{column}"><i class="fa fa-trash"></i></button>
         </div>
-        <div id="advForm{column}" class="d-none flex-column my-3">
-            <div class="d-block">
-                <span><strong>Advanced Field</strong></span>
-            </div>
-            <div class="d-flex flex-row">
-                <input type="text" class="form-control col-6 noAutoFocus" name="column[{column}][advfield]" placeholder="Column name in database"/>
-                <select class="form-control col-4 noAutoFocus advFieldType" data-column="{column}" name="column[{column}][advfieldtype]">
-                    <option value="">Select</option>
-                    <option value="int">Number</option>
-                    <option value="varchar">Short Text</option>
-                    <option value="text">Paragraph Text</option>
-                    <option value="enum">Dropdown List</option>
-                    <option value="enum_radio">Radio List</option>
-                    <option value="text_multiple">Multiple Choice</option>
-                </select>
-            </div>
-            <div id="dropdownOptions{column}" class="dropdown-options mt-2 d-none">
-                <label><strong>Dropdown Options</strong></label>
-                <div class="dropdown-options-container"></div>
-                <button type="button" class="btn btn-sm btn-info mt-1 addDropdownOption" data-column="{column}">Add Option</button>
-            </div>
+        <div id="dropdownOptions{column}" class="dropdown-options mt-2 d-none">
+            <label><strong>Dropdown Options</strong></label>
+            <div class="dropdown-options-container"></div>
+            <button type="button" class="btn btn-sm btn-info mt-1 addDropdownOption" data-column="{column}">Add Option</button>
         </div>
-    </div>`;
+    </div>
+</div>`;
 
+addRow.click(function(e) {
+    e.preventDefault()
+    let nextNumber = parseInt($(this).attr('row')) + 1
+    area.append(template.replace(/\{column\}/g, nextNumber))
+    $(this).attr('row', nextNumber)
+})
 
-    addRow.click(function(e) {
-        e.preventDefault()
-        let nextNumber = parseInt($(this).attr('row')) + 1
-        area.append(template.replace(/\{column\}/g, nextNumber))
-        $(this).attr('row', nextNumber)
+area.on('keyup blur', '.columnName', function(){
+    let labelRow = $(this).data('label')
+    $('#columnName' + labelRow).html($(this).val())
+})
+
+area.on('change', 'select', function(){
+    let column = $(this).data('row')
+    if (!column) return;
+
+    if ($(this).val() === 'advance') {
+        $('#advForm' + column).removeClass('d-none').addClass('d-flex')
+    } else {
+        $('#advForm' + column).addClass('d-none').removeClass('d-flex')
+        $('input[name="column[' + column + '][advfield]"]').val('')
+        $('select[name="column[' + column + '][advfieldtype]"]').val('')
+        $('#dropdownOptions' + column).addClass('d-none').find('.dropdown-options-container').empty()
+    }
+})
+
+area.on('change', '.advFieldType', function(){
+    let column = $(this).data('column')
+    let type = $(this).val()
+
+    let dropdownContainer = $('#dropdownOptions' + column)
+    if (type === 'enum') {
+        dropdownContainer.removeClass('d-none')
+    } else {
+        dropdownContainer.addClass('d-none').find('.dropdown-options-container').empty()
+    }
+})
+
+area.on('click', '.addDropdownOption', function(){
+    let column = $(this).data('column')
+    let container = $('#dropdownOptions' + column + ' .dropdown-options-container')
+    let index = container.children().length + 1
+
+    container.append(
+        `<div class="input-group mb-1 col-6">
+            <input type="text" name="column[${column}][options][]" class="form-control form-control-sm" placeholder="Option ${index}"/>
+            <div class="input-group-append">
+                <button type="button" class="btn btn-danger btn-sm removeDropdownOption">&times;</button>
+            </div>
+        </div>`
+    )
+})
+
+area.on('click', '.removeDropdownOption', function(){
+    $(this).closest('.input-group').remove()
+})
+
+area.on('click', '.deleteRow', function(){
+    let column = $(this).data('remove')
+    $('#detailrow' + column).remove()
+})
+
+$(document).ready(function(){
+    let editorInstance = ''
+
+    DecoupledEditor
+        .create(document.querySelector('#contentDesc'), {  
+            toolbar: ['heading', 'bold', 'italic', 'link', 'numberedList', 'bulletedList']
+        })
+        .then(editor => {
+            const toolbarContainer = document.querySelector('#toolbarContainer')
+            toolbarContainer.appendChild(editor.ui.view.toolbar.element)
+            editorInstance = editor
+        })
+        .catch(error => {
+            console.error(error)
+        })
+
+    $('#mainForm').submit(function(){
+        // append editor content
+        $(this).append('<textarea name="info[desc]" class="d-none">' + editorInstance.getData() + '</textarea>')
+
+        // convert enum options to single string
+        $('.advFieldType').each(function(){
+            let column = $(this).data('column')
+            let type = $(this).val()
+
+            if (type === 'enum') {
+                let fieldName = $(`input[name="column[${column}][advfield]"]`).val().trim()
+                let options = []
+
+                $(`input[name="column[${column}][options][]"]`).each(function(){
+                    let val = $(this).val().trim()
+                    if (val !== '') {
+                        options.push(val)
+                    }
+                })
+
+                let advfieldValue = fieldName + ',' + options.join('|')
+                $(`input[name="column[${column}][advfield]"]`).val(advfieldValue)
+            }
+        })
     })
 
-    area.on('keyup', '.columnName', function(){
-        let labelRow = $(this).data('label')
-        $(`#columnName${labelRow}`).html($(this).val())
-    })
-
-    area.on('blur', '.columnName', function(){
-        let labelRow = $(this).data('label')
-        $(`#columnName${labelRow}`).html($(this).val())
-    })
-
-    area.on('change', 'select', function(){
-        let column = $(this).data('row')
-
-        if ($(this).val() === 'advance') {
-            $(`#advForm${column}`).addClass('d-flex')
-        } else {
-            $(`#advForm${column}`).removeClass('d-flex')
-            $(`input[name="column[${column}][advfield]"]`).val('')
-            $(`select[name="column[${column}][advfieldtype]"]`).val('')
-        }
-    })
-
-    area.on('click', '.deleteRow', function(){
-        let column = $(this).data('remove')
-        $(`#detailrow${column}`).remove()
-    })
-
-    area.on('click', 'input,select', function(e){
-        e.preventDefault()
-    })
-
-    $(document).ready(function(){
-        let editorInstance = '';
-
-        $('#mainForm').submit(function(){
-            // Existing editor content
-            $(this).append('<textarea name="info[desc]" class="d-none">' + editorInstance.getData() + '</textarea>');
-
-            // 👇 NEW: convert dropdown options
-            $('.advFieldType').each(function(){
-                let column = $(this).data('column');
-                let type = $(this).val();
-
-                if (type === 'enum') {Oh noOh no
-                    let fieldName = $(`input[name="column[${column}][advfield]"]`).val().trim();
-                    let options = [];
-                    $(`input[name="column[${column}][options][]"]`).each(function(){
-                        if ($(this).val().trim() !== '') {
-                            options.push($(this).val().trim());
-                        }
-                    });
-
-                    let advfieldValue = fieldName + ',' + options.join('|');
-
-                    $(`input[name="column[${column}][advfield]"]`).val(advfieldValue);
-                }
-            });
-        });
-
-
-        DecoupledEditor
-            .create(document.querySelector('#contentDesc'), {  
-                toolbar: ['heading', 'bold', 'italic', 'link', 'numberedList', 'bulletedList']
-            })
-            .then(editor => {
-                const toolbarContainer = document.querySelector('#toolbarContainer');
-                toolbarContainer.appendChild(editor.ui.view.toolbar.element);
-                editorInstance = editor;
-            })
-            .catch(error => {
-                console.log(error);
-            });
-
-        // When the form is submitted, retrieve the content
-        // and put it into a hidden textarea
-        $('#mainForm').submit(function(){
-            $(this).append('<textarea name="info[desc]" class="d-none">' + editorInstance.getData() + '</textarea>');
-        });
-
-        $('#dataList > tbody').prepend(`
+    // prepend warning row
+    $('#dataList > tbody').prepend(`
         <tr>
             <td colspan="3">
                 <div class="alert alert-warning" role="alert">
@@ -223,38 +243,6 @@ echo $form->printOut();
                     <p>The created scheme cannot be changed. Make sure everything is filled in correctly.</p>
                 </div>
             </td>
-        </tr>`);
-    });
-
-    area.on('change', '.advFieldType', function(){
-        let column = $(this).data('column');
-        let type = $(this).val();
-
-        if (type === 'enum') {
-            $(`#dropdownOptions${column}`).removeClass('d-none');
-        } else {
-            $(`#dropdownOptions${column}`).addClass('d-none').find('.dropdown-options-container').empty();
-        }
-    });
-
-    area.on('click', '.addDropdownOption', function(){
-        let column = $(this).data('column');
-        let container = $(`#dropdownOptions${column} .dropdown-options-container`);
-        let index = container.children().length + 1;
-
-        container.append(`
-            <div class="input-group mb-1 col-6">
-                <input type="text" name="column[${column}][options][]" class="form-control form-control-sm" placeholder="Option ${index}"/>
-                <div class="input-group-append">
-                    <button type="button" class="btn btn-danger btn-sm removeDropdownOption">&times;</button>
-                </div>
-            </div>
-        `);
-    });
-
-    area.on('click', '.removeDropdownOption', function(){
-        $(this).closest('.input-group').remove();
-    });
-
-
+        </tr>`)
+})
 </script>

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: member_self_registration
  * Plugin URI: https://github.com/drajathasan/member_self_registration
- * Description: Plugin for Online Reegistration
+ * Description: Member Online Registration Plugin
  * Version: 1.0.0
  * Author: Drajat Hasan | Translated to english by: Jessie Soliman
  * Author URI: Drajat Hasan
