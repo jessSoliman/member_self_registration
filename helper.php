@@ -106,16 +106,16 @@ if (!function_exists('formGenerator'))
         // set action url
         if ($actionUrl === '' || stripos($actionUrl, 'admin') !== false) {
             if ($actionUrl === '') {
-                echo '<h3>Pratinjau</h3>';
-                echo '<h5>Skema ' . $data->name . '</h5>';
+                echo '<h3>Preview</h3>'; // Pratinjau -> Preview
+                echo '<h5>Scheme ' . $data->name . '</h5>'; // Skema -> Scheme
             } else {
-                echo '<h3>Pratinjau Data</h3>';
-                echo '<h5>Calon anggota ' . $record['member_name'] . '</h5>';
+                echo '<h3>Data Preview</h3>'; // Pratinjau Data -> Data Preview
+                echo '<h5>Candidate member ' . $record['member_name'] . '</h5>'; // Calon anggota -> Candidate member
             }
         } else {
             if ($opac !== null) $opac->page_title = $info->title;
             $descInfo = '<div class="alert alert-info p-3">' . strip_tags($info->desc, '<p><a><i><em><h1><h2><h3><ul><ol><li>') . '</div>';
-        }
+        }        
 
         if ($info->position == 'top' && isset($descInfo)) {
             echo $descInfo;
@@ -160,67 +160,79 @@ if (!function_exists('formGenerator'))
                     }
                     echo <<<HTML
                     <br>
-                    <small>tulis dibawah berikut</small>
-                    <input type="password" placeholder="masukan {$column['name']} anda" name="form[{$key}]" id="pass1" class="form-control" {$is_required}>
-                    <small>konfirmasi ulang password anda</small>
-                    <input type="password" name="confirm_password" placeholder="masukan ulang {$column['name']} anda" id="pass2" class="form-control" {$is_required}>
+                    <small>New Password</small> <!-- tulis dibawah berikut -->
+                    <input type="password" placeholder="Enter your {$column['name']}" name="form[{$key}]" id="pass1" class="form-control" {$is_required}>
+                    <small>Retype Password</small> <!-- konfirmasi ulang password anda -->
+                    <input type="password" name="confirm_password" placeholder="re-Enter your {$column['name']}" id="pass2" class="form-control" {$is_required}>
                     HTML;
                     break;
-
+            
                 case 'gender':
                     $man = $defaultValue != 1 ?:'selected';
                     $woman = $defaultValue != 0 ?:'selected';
                     echo <<<HTML
                     <select name="form[{$key}]" class="form-control" {$is_required}>
-                        <option>Pilih</option>
-                        <option value="1" {$man}>Laki-Laki</option>
-                        <option value="0" {$woman}>Perempuan</option>
+                        <option>Select</option> <!-- Pilih -->
+                        <option value="1" {$man}>Male</option> <!-- Laki-Laki -> Male -->
+                        <option value="0" {$woman}>Female</option> <!-- Perempuan -> Female -->
                     </select>
                     HTML;
                     break;
-
-                case 'member_address':
+                
+                case 'inst_name':
+                    $apalit = $defaultValue != 1 ?:'selected';
+                    $caloocan = $defaultValue != 0 ?:'selected';
                     echo <<<HTML
-                    <textarea name="form[{$key}]" placeholder="masukan {$column['name']} anda" class="form-control" {$is_required}>{$defaultValue}</textarea>
+                    <select name="form[{$key}]" class="form-control" {$is_required}>
+                        <option>Select</option>
+                        <option value="1" {$apalit}>Apalit</option>
+                        <option value="0" {$caloocan}>Caloocan</option>
+                    </select>
                     HTML;
                     break;
-
+                
+            
+                case 'member_address':
+                    echo <<<HTML
+                    <textarea name="form[{$key}]" placeholder="Enter your {$column['name']}" class="form-control" {$is_required}>{$defaultValue}</textarea>
+                    HTML;
+                    break;
+            
                 case 'member_type_id':
                     $memberType = \SLiMS\DB::getInstance()->query('select member_type_id, member_type_name from mst_member_type');
                     echo '<select class="form-control" name="form[' . $key . ']" ' . $is_required . '>';
-                    echo '<option value="0">Pilih</option>';
+                    echo '<option value="0">Select</option>'; // Pilih -> Select
                     while ($result = $memberType->fetch(PDO::FETCH_NUM)) {
                         echo '<option value="' . $result[0] . '" ' . ($defaultValue != $result[0] ?:'selected') . '>' . $result[1] . '</option>';
                     }
                     echo '</select>';
                     break;
-                
+            
                 // Advance field element
                 case 'advance':
                     switch ($column['advfieldtype']) {
-
                         // short text field
                         case 'varchar':
                         case 'int':
                             $types = ['varchar' => 'text', 'int' => 'number'];
                             $type = $types[$column['advfieldtype']];
                             echo <<<HTML
-                            <input type="{$type}" name="form[{$key}]" value="{$defaultValue}" placeholder="masukan {$column['name']} anda" class="form-control" {$is_required}/>
+                            <input type="{$type}" name="form[{$key}]" value="{$defaultValue}" placeholder="Enter your {$column['name']}" class="form-control" {$is_required}/>
                             HTML;
                             break;
-
+            
                         // long text
                         case 'text':
                             echo <<<HTML
-                            <textarea name="form[{$key}]" placeholder="masukan {$column['name']} anda" class="form-control" {$is_required}>{$defaultValue}</textarea>
+                            <textarea name="form[{$key}]" placeholder="Enter your {$column['name']}" class="form-control" {$is_required}>{$defaultValue}</textarea>
                             HTML;
                             break;
-                        
+            
                         // select list
                         case 'enum':
                             list($field,$list) = explode(',', $column['advfield']);
                             echo '<select name="form[' . $key . ']" class="form-control" '.$defaultValue.'>';
-                            echo '<option value="">Pilih</option>';
+                            echo '<option value="">Select</option>'; // Pilih -> Select
                             $selected = '';
                             foreach (explode('|', $list) as $item) {
                                 if ($defaultValue == $item) $selected = 'selected';
@@ -229,23 +241,23 @@ if (!function_exists('formGenerator'))
                             }
                             echo '</select>';
                             break;
-
+            
                         // Select list as radio button
                         case 'enum_radio':
                             $field = explode(',', $column['advfield']);
                             $uniqueId = md5($field[0]);
                             $checked = '';
-
+            
                             if ($is_required) {
                                 $js .= <<<HTML
                                 if ($('.radio{$uniqueId}:checked').length < 1) {
                                     evt.preventDefault();
-                                    alert('Pilih salah satu dari isian {$column['name']}');
+                                    alert('Select one of the {$column['name']} options'); // Pilih salah satu dari isian
                                     return;
                                 }
                                 HTML;
                             }
-
+            
                             echo '<div class="d-flex flex-column">';
                             foreach (explode('|', trim($field[1])) as $optionKey => $value) {
                                 if (empty($value)) continue;
@@ -257,27 +269,27 @@ if (!function_exists('formGenerator'))
                             }
                             echo '</div>';
                             break;
-
-                        // multiple choise data
+            
+                        // multiple choice data
                         case 'text_multiple':
                             $field = explode(',', $column['advfield']);
                             $uniqueId = md5($field[0]);
                             $defaultValue = json_decode(trim($defaultValue), true);
                             $checked = '';
-
+            
                             if ($is_required) {
                                 $js .= <<<HTML
                                 if ($('.checkbox{$uniqueId}:checked').length < 1) {
                                     evt.preventDefault();
-                                    alert('Pilih salah satu dari isian {$column['name']}');
+                                    alert('Select at least one of the {$column['name']} options'); // Pilih salah satu dari isian
                                     return;
                                 }
                                 HTML;
                             }
-
+            
                             echo '<div class="d-flex flex-column">';
                             foreach (explode('|', trim($field[1])) as $optionKey => $value) {
-                                if (empty($value)) continue;
+                                // if (empty($value)) continue;
                                 if (in_array($value, $defaultValue??[])) $checked = 'checked';
                                 echo '<div class="mx-3">
                                     <input class="checkbox'.$uniqueId.'" id="checkbox' . $uniqueId . '-' . $optionKey . '" type="checkbox" name="form[' . $key . '][]" value="' . $value . '" ' . $checked . '/>
@@ -289,16 +301,16 @@ if (!function_exists('formGenerator'))
                             break;
                     }
                     break;
-
-                //  image cover
+            
+                // Image cover
                 case 'member_image':
                     if (($option?->image??null) === null) {
-                        echo '<div class="alert alert-info font-weight-bold">Anda belum mengantur ruas ini pada "Pengaturan Form"</div>';
+                        echo '<div class="alert alert-info font-weight-bold">You have not set this field in "Form Settings"</div>'; // Anda belum mengantur ruas ini pada "Pengaturan Form"
                     } else {
                         if (!isset($record['member_image'])) {
                             echo <<<HTML
-                            <input type="file" name="member_image" placeholder="masukan {$column['name']} anda" class="form-control d-block" {$is_required}/>
-                            <small>Maksimal ukuran file foto adalah 2MB</small>
+                            <input type="file" name="member_image" placeholder="Enter your {$column['name']}" class="form-control d-block" {$is_required}/>
+                            <small>Maximum photo file size is 2MB</small> <!-- Maksimal ukuran file foto adalah 2MB -->
                             HTML;
                         } else {
                             $image = Storage::images()->isExists('persons/' . $record['member_image']) ? $record['member_image'] : 'avatar.jpg';
@@ -306,13 +318,13 @@ if (!function_exists('formGenerator'))
                         }
                     }
                     break;
-
-                // lets generate as inptu type text or date or email
+            
+                // Generate as input type text, date, or email
                 default:
                     $types = ['birth_date' => 'date', 'member_email' => 'email'];
                     $type = isset($types[$column['field']]) ? $types[$column['field']] : 'text';
                     echo <<<HTML
-                    <input type="{$type}" name="form[{$key}]" value="{$defaultValue}" placeholder="masukan {$column['name']} anda" class="form-control" {$is_required}/>
+                    <input type="{$type}" name="form[{$key}]" value="{$defaultValue}" placeholder="Enter your {$column['name']}" class="form-control" {$is_required}/>
                     HTML;
                     break;
             }
@@ -330,16 +342,16 @@ if (!function_exists('formGenerator'))
             echo <<<HTML
             <div>
                 <input type="checkbox" id="iAgree"/>
-                <label for="iAgree" style="cursor: pointer">Saya menyetujui prasyarat diatas</label>
+                <label for="iAgree" style="cursor: pointer">I agree to the above prerequisites</label> <!-- Saya menyetujui prasyarat diatas -->
             </div>
             HTML;    
-        }
+        }        
 
         // set form action url
         if ($actionUrl !== '') {
             // Captcha initialize
             $captcha = Captcha::section('memberarea');
-
+        
             // public area
             if (strpos($actionUrl, 'admin') === false) {
                 if (($option?->captcha??false) && $captcha->isSectionActive() && config('captcha', false)) 
@@ -348,29 +360,30 @@ if (!function_exists('formGenerator'))
                     echo $captcha->getCaptcha();
                     echo '</div>';
                 }
-    
+        
                 echo \Volnix\CSRF\CSRF::getHiddenInputString();
-
+        
                 $disableBeforeAgree = '';
                 if ($option?->with_agreement??false) $disableBeforeAgree = 'disabled';
-
+        
                 echo '<div class="form-group">
                     <input type="hidden" name="action" value="save"/>
-                    <button class="btn btn-primary" type="submit" name="save" '.$disableBeforeAgree.' ' . (empty($disableBeforeAgree) ? '' : 'title="Klik \'Saya menyetujui prasyarat diatas\'"') . '>Daftar</button>
-                    <button class="btn btn-outline-secondary" type="reset" name="save">Batal</button>
+                    <button class="btn btn-primary" type="submit" name="save" '.$disableBeforeAgree.' ' . (empty($disableBeforeAgree) ? '' : 'title="Click \'I agree to the above prerequisites\'"') . '>Register</button> <!-- Daftar -> Register -->
+                    <button class="btn btn-outline-secondary" type="reset" name="save">Cancel</button> <!-- Batal -> Cancel -->
                 </div>
                 ';
             } else {
                 echo '<div class="form-group">
                     <input type="hidden" name="action" value="acc"/>
-                    <button class="btn btn-success" type="submit" name="acc">Setujui</button>
-                    <a class="btn btn-danger" href="' .  pluginUrl(['section' => 'view_detail', 'member_id' => $_GET['member_id']??0, 'headless' => 'yes', 'action' => 'delete_reg']) . '">Hapus</a>
+                    <button class="btn btn-success" type="submit" name="acc">Approve</button> <!-- Setujui -> Approve -->
+                    <a class="btn btn-danger" href="' .  pluginUrl(['section' => 'view_detail', 'member_id' => $_GET['member_id']??0, 'headless' => 'yes', 'action' => 'delete_reg']) . '">Delete</a> <!-- Hapus -> Delete -->
                 </div>';
             }
-            if (strpos($actionUrl, 'admin') === false) {
-                echo '<strong><em class="text-danger">*</em> ) wajib diisi</strong>';
-            }
+            // if (strpos($actionUrl, 'admin') === false) {
+            //     echo '<strong><em class="text-danger">*</em> ) required field</strong>';
+            // }
         }
+        
         echo '</form>';
 
         // Custom JS
