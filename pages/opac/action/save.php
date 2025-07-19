@@ -72,7 +72,7 @@ if (isset($_POST['form'])) {
             
             if ($_FILES['member_image']['error'] == 1) {
                 $max = ini_get('upload_max_filesize');
-                throw new Exception("Gagal membaca file foto profil, karena file terindikasi lebih besar dari nilai di server ({$max}B)");
+                throw new Exception("Failed to save the profile photo file because it appears to exceed the server's file size limit ({$max}B)");
             }
 
             // image uploading
@@ -112,7 +112,7 @@ if (isset($_POST['form'])) {
             $insert = DB::getInstance()->prepare($query);
             $insert->execute($sqlParams);
 
-            if ($insert->rowCount() == 0) throw new Exception('Data tidak berhasil disimpan, mungkin karena data sudah ada.');
+            if ($insert->rowCount() == 0) throw new Exception('Member data already exists in our records.');
         }
 
         if ($option?->message_after_save??false) toastr($option->message_after_save)->jsAlert();

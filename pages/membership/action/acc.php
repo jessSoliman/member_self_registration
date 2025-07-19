@@ -96,10 +96,10 @@ if (count($result_customs) && $process) {
 if ($process) {
     
     if (isset($process_custom) && $process_custom == false) {
-        toastr('Gagal menyimpan data custom')->success();
+        toastr('Failed to save custom data')->success();
     }
     
-    toastr('Data berhasil disimpan')->success();
+    toastr('Member Data saved successfully')->success();
     echo '<script>top.jQuery.colorbox.close();</script>';
 
     // delete data

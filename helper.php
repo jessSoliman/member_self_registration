@@ -154,60 +154,117 @@ if (!function_exists('formGenerator'))
     
             // set html form element based on database field
             switch ($column['field']) {
-                case 'mpasswd':
-                    if ($actionUrl !== '') {
-                        $is_required = '';
+               case 'mpasswd':
+                if (!empty($actionUrl)) {
+                   if (strpos($actionUrl, 'admin') !== false) {
+                        echo '<br>The password is hidden to prevent changes to what the member originally set.';
+                        break;
                     }
-                    echo <<<HTML
-                    <br>
-                    <small>New Password</small>
+
+                    $is_required = '';
+                }
+                echo <<<HTML
+                <br>
+                <ul id="password-rules" style="font-size: small; list-style: none; padding-left: 1em; margin-bottom: 5px;">
+                    <li id="rule-length" style="color: red;">• At least 8 characters</li>
+                    <li id="rule-uppercase" style="color: red;">• At least one uppercase letter</li>
+                    <li id="rule-lowercase" style="color: red;">• At least one lowercase letter</li>
+                    <li id="rule-number" style="color: red;">• At least one number</li>
+                </ul>
+
+                <small>New Password</small>
+                <div style="position: relative;">
                     <input type="password" 
                         placeholder="Enter your {$column['name']}" 
                         name="form[{$key}]" 
                         id="pass1" 
-                        class="form-control" 
-                        {$is_required} 
-                        minlength="8"
-                        pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}"
-                        title="At least 8 characters, 1 uppercase, 1 lowercase, and 1 number">
+                        class="form-control pr-5" 
+                        {$is_required}>
+                    <button type="button" class="toggle-password" data-target="pass1" 
+                        style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: none;">
+                        🤔
+                    </button>
+                </div>
 
-                    <small>Retype Password</small>
+                <ul style="font-size: small; list-style: none; padding-left: 1em; margin-top: 10px; margin-bottom: 5px;">
+                    <li id="rule-match" style="color: red;">• Passwords must match</li>
+                </ul>
+
+                <small>Retype Password</small>
+                <div style="position: relative;">
                     <input type="password" 
                         name="confirm_password" 
                         placeholder="Re-enter your {$column['name']}" 
                         id="pass2" 
-                        class="form-control" 
+                        class="form-control pr-5" 
                         {$is_required}>
+                    <button type="button" class="toggle-password" data-target="pass2" 
+                        style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: none;">
+                        🤔
+                    </button>
+                </div>
 
-                    <div id="password-error" style="color:red; font-size:small;"></div>
+                <script>
+                const pass1 = document.getElementById('pass1');
+                const pass2 = document.getElementById('pass2');
 
-                    <script>
-                    const pass1 = document.getElementById('pass1');
-                    const pass2 = document.getElementById('pass2');
-                    const errorDiv = document.getElementById('password-error');
+                const rules = {
+                    length: document.getElementById('rule-length'),
+                    uppercase: document.getElementById('rule-uppercase'),
+                    lowercase: document.getElementById('rule-lowercase'),
+                    number: document.getElementById('rule-number'),
+                    match: document.getElementById('rule-match')
+                };
 
-                    function validatePasswords() {
-                        if (pass1.value !== pass2.value) {
-                            errorDiv.textContent = "Passwords do not match.";
-                            return false;
-                        } else {
-                            errorDiv.textContent = "";
-                            return true;
-                        }
+                function updatePasswordRules() {
+                    const val1 = pass1.value;
+                    const val2 = pass2.value;
+
+                    const hasLength = val1.length >= 8;
+                    const hasUpper = /[A-Z]/.test(val1);
+                    const hasLower = /[a-z]/.test(val1);
+                    const hasNumber = /[0-9]/.test(val1);
+                    const isMatch = val1 === val2 && val1 !== '';
+
+                    rules.length.style.color = hasLength ? 'green' : 'red';
+                    rules.uppercase.style.color = hasUpper ? 'green' : 'red';
+                    rules.lowercase.style.color = hasLower ? 'green' : 'red';
+                    rules.number.style.color = hasNumber ? 'green' : 'red';
+                    rules.match.style.color = isMatch ? 'green' : 'red';
+
+                    return hasLength && hasUpper && hasLower && hasNumber && isMatch;
+                }
+
+                pass1.addEventListener('input', updatePasswordRules);
+                pass2.addEventListener('input', updatePasswordRules);
+
+                document.querySelector('form').addEventListener('submit', function(e) {
+                    if (!updatePasswordRules()) {
+                        e.preventDefault();
+                        alert("Please meet all password requirements.");
                     }
+                });
 
-                    pass1.addEventListener('input', validatePasswords);
-                    pass2.addEventListener('input', validatePasswords);
-
-                    // If you want to enforce it on form submit too:
-                    document.querySelector('form').addEventListener('submit', function(e) {
-                        if (!validatePasswords()) {
-                            e.preventDefault();
+                // Show/hide password toggle
+                document.querySelectorAll('.toggle-password').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const targetId = this.getAttribute('data-target');
+                        const input = document.getElementById(targetId);
+                        if (input.type === 'password') {
+                            input.type = 'text';
+                            this.textContent = '🫣'; // change icon
+                        } else {
+                            input.type = 'password';
+                            this.textContent = '🤔';
                         }
                     });
-                    </script>
-                    HTML;
-                    break;
+                });
+                </script>
+                HTML;
+                break;
+
+
+
             
                 case 'gender':
                     $man = $defaultValue != 1 ?:'selected';
