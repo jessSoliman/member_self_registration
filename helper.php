@@ -177,20 +177,7 @@ if (!function_exists('formGenerator'))
                         <option value="0" {$woman}>Female</option> <!-- Perempuan -> Female -->
                     </select>
                     HTML;
-                    break;
-                
-                case 'inst_name':
-                    $apalit = $defaultValue != 1 ?:'selected';
-                    $caloocan = $defaultValue != 0 ?:'selected';
-                    echo <<<HTML
-                    <select name="form[{$key}]" class="form-control" {$is_required}>
-                        <option>Select</option>
-                        <option value="1" {$apalit}>Apalit</option>
-                        <option value="0" {$caloocan}>Caloocan</option>
-                    </select>
-                    HTML;
-                    break;
-                
+                    break; 
             
                 case 'member_address':
                     echo <<<HTML
