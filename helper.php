@@ -160,10 +160,52 @@ if (!function_exists('formGenerator'))
                     }
                     echo <<<HTML
                     <br>
-                    <small>New Password</small> <!-- tulis dibawah berikut -->
-                    <input type="password" placeholder="Enter your {$column['name']}" name="form[{$key}]" id="pass1" class="form-control" {$is_required}>
-                    <small>Retype Password</small> <!-- konfirmasi ulang password anda -->
-                    <input type="password" name="confirm_password" placeholder="re-Enter your {$column['name']}" id="pass2" class="form-control" {$is_required}>
+                    <small>New Password</small>
+                    <input type="password" 
+                        placeholder="Enter your {$column['name']}" 
+                        name="form[{$key}]" 
+                        id="pass1" 
+                        class="form-control" 
+                        {$is_required} 
+                        minlength="8"
+                        pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}"
+                        title="At least 8 characters, 1 uppercase, 1 lowercase, and 1 number">
+
+                    <small>Retype Password</small>
+                    <input type="password" 
+                        name="confirm_password" 
+                        placeholder="Re-enter your {$column['name']}" 
+                        id="pass2" 
+                        class="form-control" 
+                        {$is_required}>
+
+                    <div id="password-error" style="color:red; font-size:small;"></div>
+
+                    <script>
+                    const pass1 = document.getElementById('pass1');
+                    const pass2 = document.getElementById('pass2');
+                    const errorDiv = document.getElementById('password-error');
+
+                    function validatePasswords() {
+                        if (pass1.value !== pass2.value) {
+                            errorDiv.textContent = "Passwords do not match.";
+                            return false;
+                        } else {
+                            errorDiv.textContent = "";
+                            return true;
+                        }
+                    }
+
+                    pass1.addEventListener('input', validatePasswords);
+                    pass2.addEventListener('input', validatePasswords);
+
+                    // If you want to enforce it on form submit too:
+                    document.querySelector('form').addEventListener('submit', function(e) {
+                        if (!validatePasswords()) {
+                            e.preventDefault();
+                        }
+                    });
+                    </script>
                     HTML;
                     break;
             
@@ -175,6 +217,18 @@ if (!function_exists('formGenerator'))
                         <option>Select</option> <!-- Pilih -->
                         <option value="1" {$man}>Male</option> <!-- Laki-Laki -> Male -->
                         <option value="0" {$woman}>Female</option> <!-- Perempuan -> Female -->
+                    </select>
+                    HTML;
+                    break; 
+
+                case 'inst_name':
+                    $apalit = $defaultValue != 1 ?:'selected';
+                    $caloocan = $defaultValue != 0 ?:'selected';
+                    echo <<<HTML
+                    <select name="form[{$key}]" class="form-control" {$is_required}>
+                        <option>Select</option> <!-- Pilih -->
+                        <option value="Apalit" {$apalit}>Apalit</option> <!-- Apalit -->
+                        <option value="Caloocan" {$caloocan}>Caloocan</option> <!-- Caloocan -->
                     </select>
                     HTML;
                     break; 
@@ -305,10 +359,59 @@ if (!function_exists('formGenerator'))
                         }
                     }
                     break;
+
+                case 'member_email':
+                    if ($actionUrl !== '') {
+                        $is_required = '';
+                    }
+                    echo <<<HTML
+                    <br>
+                    <small>Email</small>
+                    <input type="email" 
+                        placeholder="Enter your {$column['name']}" 
+                        name="form[{$key}]" 
+                        id="member_email" 
+                        class="form-control" 
+                        {$is_required} 
+                        pattern="^[a-zA-Z0-9._%+-]+@(student\\.)?laverdad\\.edu\\.ph$"
+                        title="Only laverdad.edu.ph or student.laverdad.edu.ph emails are allowed">
+
+                    <div id="email-error" style="color:red; font-size:small;"></div>
+
+                    <script>
+                    const emailInput = document.getElementById('member_email');
+                    const emailError = document.getElementById('email-error');
+
+                    function validateEmail() {
+                        const value = emailInput.value.trim();
+                        const regex = /^[a-zA-Z0-9._%+-]+@(student\\.)?laverdad\\.edu\\.ph$/;
+                        if (value === '') {
+                            emailError.textContent = '';
+                            return true;
+                        }
+                        if (!regex.test(value)) {
+                            emailError.textContent = "Only laverdad.edu.ph or student.laverdad.edu.ph emails are allowed.";
+                            return false;
+                        } else {
+                            emailError.textContent = "";
+                            return true;
+                        }
+                    }
+
+                    emailInput.addEventListener('input', validateEmail);
+
+                    document.querySelector('form').addEventListener('submit', function(e) {
+                        if (!validateEmail()) {
+                            e.preventDefault();
+                        }
+                    });
+                    </script>
+                    HTML;
+                    break;
             
                 // Generate as input type text, date, or email
                 default:
-                    $types = ['birth_date' => 'date', 'member_email' => 'email'];
+                    $types = ['birth_date' => 'date'];
                     $type = isset($types[$column['field']]) ? $types[$column['field']] : 'text';
                     echo <<<HTML
                     <input type="{$type}" name="form[{$key}]" value="{$defaultValue}" placeholder="Enter your {$column['name']}" class="form-control" {$is_required}/>
