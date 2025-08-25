@@ -70,23 +70,21 @@ if ($schemas->rowCount() < 1) {
     $url = pluginUrl();
     echo <<<HTML
     <script>
-        $('input[type="checkbox"]').change(function(){
-            let activeSchema = $('#schemas').attr('schema-active')
-            
-            if (activeSchema != 0 && activeSchema != $(this).data('uid')) {
-                console.log(activeSchema)
-                $(`#checkbox\${activeSchema}`).trigger('click')
-            }
+       $('input[type="checkbox"]').change(function() {
+            let uid = $(this).data('uid');
+            let deactivate = this.checked === false;
 
-            let uid = $(this).data('uid')
-            if (this.checked === false) uid = 0
-
-            $.post('{$actionUrl}', {schema_id:uid, action: 'active_schema'}, function(){
+            $.post('{$actionUrl}', {
+                schema_id: uid,
+                action: 'active_schema',
+                deactivate: deactivate ? 1 : 0
+            }, function() {
                 setTimeout(() => {
-                    $('#mainContent').simbioAJAX('{$url}')
+                    $('#mainContent').simbioAJAX('{$url}');
                 }, 1000);
-            })
+            });
         })
+
 
         $('.schemaDelete').click(function(e) {
             e.preventDefault()

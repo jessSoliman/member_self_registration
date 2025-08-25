@@ -2,7 +2,7 @@
 /**
  * Plugin Name: member_self_registration
  * Plugin URI: https://github.com/drajathasan/member_self_registration
- * Description: Plugin for Online Reegistration
+ * Description: Member Online Registration Plugin
  * Version: 1.0.0
  * Author: Drajat Hasan | Translated to english by: Jessie Soliman
  * Author URI: Drajat Hasan
@@ -28,11 +28,11 @@ $plugin->registerMenu('membership', 'Online Registration', __DIR__ . '/pages/mem
 
 // Get active schema from database
 if (Schema::hasTable($table = 'self_registration_schemas')) {
-    $activeSchema = DB::getInstance()->query('select id,name from ' . $table . ' where status =  1');
-
-    if ($activeSchema->rowCount()) {
-        $data = $activeSchema->fetchObject();
-        $plugin->registerMenu('opac', $data->name, __DIR__ . DS . 'pages' . DS . 'opac' . DS . 'index.php');
+    $schemas = DB::getInstance()->query('select id,name from ' . $table . ' where status =  1');
+    
+    while ($schema = $schemas->fetchObject()) {
+        $slug = strtolower(str_replace(' ', '_', $schema->name));
+        $plugin->registerMenu('opac', $schema->name, __DIR__ . DS . 'pages' . DS . 'opac' . DS . 'index.php', $slug);
     }
 }
 
