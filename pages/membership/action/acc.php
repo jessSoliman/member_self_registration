@@ -4,17 +4,33 @@ use SLiMS\Plugins;
 
 defined('INDEX_AUTH') or die('Direct access is not allowed!');
 
-$member_id = $_POST['form']['member_id']??0;
-Plugins::getInstance()->execute('member_self_before_acc', ['member_id' => $member_id, 'activeSchema' => $activeSchema]);
+$member_id = $_POST['form']['member_id'] ?? 0;
 
-$schema = $activeSchema->fetchObject();
-$baseTable = 'self_registration_' . trim(strtolower(str_replace(' ', '_', $schema->name)));
+Plugins::getInstance()->execute('member_self_before_acc', [
+    'member_id' => $member_id,
+    'activeSchema' => $activeSchema
+]);
 
-$data = DB::getInstance()->prepare('select * from ' . $baseTable . ' where member_id = ?');
-$data->execute([$member_id]);
+$schema = null;
+$baseTable = '';
+$data = null;
 
-if ($data->rowCount() < 1) {
-    redirect()->back();
+while ($row = $activeSchema->fetchObject()) {
+    $testTable = 'self_registration_' . trim(strtolower(str_replace(' ', '_', $row->name)));
+
+    $stmt = DB::getInstance()->prepare('SELECT * FROM ' . $testTable . ' WHERE member_id = ?');
+    $stmt->execute([$member_id]);
+
+    if ($stmt->rowCount() > 0) {
+        $schema = $row;
+        $baseTable = $testTable;
+        $data = $stmt;
+        break; // stop loop when member found
+    }
+}
+
+if (!$data || $data->rowCount() < 1) {
+    redirect()->back(); // no matching record found
     exit;
 }
 

@@ -763,9 +763,6 @@ $(document).ready(function() {
     // table spec
     $table_spec = 'member AS m
         LEFT JOIN mst_member_type AS mt ON m.member_type_id=mt.member_type_id';
-    
-    return $table_spec;
-
     // create datagrid
     $datagrid = new simbio_datagrid();
     if ($can_read AND $can_write) {

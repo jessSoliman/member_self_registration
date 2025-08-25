@@ -6,11 +6,15 @@ use SLiMS\Filesystems\Storage;
 if (!function_exists('getActiveSchemaData'))
 {
     function getActiveSchemaData()
-    {
-        $state = \SLiMS\DB::getInstance()->query('select * from self_registration_schemas where status = 1');
+        {
+            $state = \SLiMS\DB::getInstance()->query(
+                'SELECT * FROM self_registration_schemas WHERE status = 1'
+            );
 
-        return $state->rowCount() ? $state->fetchObject() : null;
-    }
+            return $state->rowCount() ? $state->fetchAll(PDO::FETCH_OBJ) : [];
+        }
+
+
 }
 
 if (!function_exists('action')) {
@@ -97,6 +101,10 @@ if (!function_exists('formGenerator'))
 
         echo '<form id="self_member" method="POST" action="' . $actionUrl . '" ' . $withUpload . '>';
 
+        if ($success = flash()->includes('self_regis_success')) {
+                flash()->success($success);
+            }
+
         // set error
         if ($key = flash()->includes('self_regis_error'))
         {
@@ -109,8 +117,8 @@ if (!function_exists('formGenerator'))
                 echo '<h3>Preview</h3>'; // Pratinjau -> Preview
                 echo '<h5>Scheme ' . $data->name . '</h5>'; // Skema -> Scheme
             } else {
-                echo '<h3>Data Preview</h3>'; // Pratinjau Data -> Data Preview
-                echo '<h5>Candidate member ' . $record['member_name'] . '</h5>'; // Calon anggota -> Candidate member
+                echo '<h3>New Member</h3>'; // Pratinjau Data -> Data Preview
+                echo '<h5>'.$record['member_name'].'</h5>';
             }
         } else {
             if ($opac !== null) $opac->page_title = $info->title;
@@ -124,7 +132,8 @@ if (!function_exists('formGenerator'))
         // Generate form structure
         foreach ($structure as $key => $column) {
             // Convert key to fieldname
-            if (strpos($actionUrl, 'admin') == true) { 
+            $isAdminView = strpos($actionUrl, 'admin');
+            if ($isAdminView) { 
                 if (empty($column['advfield'])) {
                     $key = $column['field'];
                 } else {
@@ -154,114 +163,114 @@ if (!function_exists('formGenerator'))
     
             // set html form element based on database field
             switch ($column['field']) {
-               case 'mpasswd':
-                if (!empty($actionUrl)) {
-                   if (strpos($actionUrl, 'admin') !== false) {
-                        echo '<br>The password is hidden to prevent changes to what the member originally set.';
-                        break;
+                case 'mpasswd':
+                    if (!empty($actionUrl)) {
+                    if (strpos($actionUrl, 'admin') !== false) {
+                            echo '<br>The password is hidden to prevent changes to what the member originally set.';
+                            break;
+                        }
+
+                        $is_required = '';
+                    }
+                    echo <<<HTML
+                    <br>
+                    <ul id="password-rules" style="font-size: small; list-style: none; padding-left: 1em; margin-bottom: 5px;">
+                        <li id="rule-length" style="color: red;">• At least 8 characters</li>
+                        <li id="rule-uppercase" style="color: red;">• At least one uppercase letter</li>
+                        <li id="rule-lowercase" style="color: red;">• At least one lowercase letter</li>
+                        <li id="rule-number" style="color: red;">• At least one number</li>
+                    </ul>
+
+                    <small>New Password</small>
+                    <div style="position: relative;">
+                        <input type="password" 
+                            placeholder="Enter your {$column['name']}" 
+                            name="form[{$key}]" 
+                            id="pass1" 
+                            class="form-control pr-5" 
+                            {$is_required}>
+                        <button type="button" class="toggle-password" data-target="pass1" 
+                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: none;">
+                            🤔
+                        </button>
+                    </div>
+
+                    <ul style="font-size: small; list-style: none; padding-left: 1em; margin-top: 10px; margin-bottom: 5px;">
+                        <li id="rule-match" style="color: red;">• Passwords must match</li>
+                    </ul>
+
+                    <small>Retype Password</small>
+                    <div style="position: relative;">
+                        <input type="password" 
+                            name="confirm_password" 
+                            placeholder="Re-enter your {$column['name']}" 
+                            id="pass2" 
+                            class="form-control pr-5" 
+                            {$is_required}>
+                        <button type="button" class="toggle-password" data-target="pass2" 
+                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: none;">
+                            🤔
+                        </button>
+                    </div>
+
+                    <script>
+                    const pass1 = document.getElementById('pass1');
+                    const pass2 = document.getElementById('pass2');
+
+                    const rules = {
+                        length: document.getElementById('rule-length'),
+                        uppercase: document.getElementById('rule-uppercase'),
+                        lowercase: document.getElementById('rule-lowercase'),
+                        number: document.getElementById('rule-number'),
+                        match: document.getElementById('rule-match')
+                    };
+
+                    function updatePasswordRules() {
+                        const val1 = pass1.value;
+                        const val2 = pass2.value;
+
+                        const hasLength = val1.length >= 8;
+                        const hasUpper = /[A-Z]/.test(val1);
+                        const hasLower = /[a-z]/.test(val1);
+                        const hasNumber = /[0-9]/.test(val1);
+                        const isMatch = val1 === val2 && val1 !== '';
+
+                        rules.length.style.color = hasLength ? 'green' : 'red';
+                        rules.uppercase.style.color = hasUpper ? 'green' : 'red';
+                        rules.lowercase.style.color = hasLower ? 'green' : 'red';
+                        rules.number.style.color = hasNumber ? 'green' : 'red';
+                        rules.match.style.color = isMatch ? 'green' : 'red';
+
+                        return hasLength && hasUpper && hasLower && hasNumber && isMatch;
                     }
 
-                    $is_required = '';
-                }
-                echo <<<HTML
-                <br>
-                <ul id="password-rules" style="font-size: small; list-style: none; padding-left: 1em; margin-bottom: 5px;">
-                    <li id="rule-length" style="color: red;">• At least 8 characters</li>
-                    <li id="rule-uppercase" style="color: red;">• At least one uppercase letter</li>
-                    <li id="rule-lowercase" style="color: red;">• At least one lowercase letter</li>
-                    <li id="rule-number" style="color: red;">• At least one number</li>
-                </ul>
+                    pass1.addEventListener('input', updatePasswordRules);
+                    pass2.addEventListener('input', updatePasswordRules);
 
-                <small>New Password</small>
-                <div style="position: relative;">
-                    <input type="password" 
-                        placeholder="Enter your {$column['name']}" 
-                        name="form[{$key}]" 
-                        id="pass1" 
-                        class="form-control pr-5" 
-                        {$is_required}>
-                    <button type="button" class="toggle-password" data-target="pass1" 
-                        style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: none;">
-                        🤔
-                    </button>
-                </div>
-
-                <ul style="font-size: small; list-style: none; padding-left: 1em; margin-top: 10px; margin-bottom: 5px;">
-                    <li id="rule-match" style="color: red;">• Passwords must match</li>
-                </ul>
-
-                <small>Retype Password</small>
-                <div style="position: relative;">
-                    <input type="password" 
-                        name="confirm_password" 
-                        placeholder="Re-enter your {$column['name']}" 
-                        id="pass2" 
-                        class="form-control pr-5" 
-                        {$is_required}>
-                    <button type="button" class="toggle-password" data-target="pass2" 
-                        style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: none;">
-                        🤔
-                    </button>
-                </div>
-
-                <script>
-                const pass1 = document.getElementById('pass1');
-                const pass2 = document.getElementById('pass2');
-
-                const rules = {
-                    length: document.getElementById('rule-length'),
-                    uppercase: document.getElementById('rule-uppercase'),
-                    lowercase: document.getElementById('rule-lowercase'),
-                    number: document.getElementById('rule-number'),
-                    match: document.getElementById('rule-match')
-                };
-
-                function updatePasswordRules() {
-                    const val1 = pass1.value;
-                    const val2 = pass2.value;
-
-                    const hasLength = val1.length >= 8;
-                    const hasUpper = /[A-Z]/.test(val1);
-                    const hasLower = /[a-z]/.test(val1);
-                    const hasNumber = /[0-9]/.test(val1);
-                    const isMatch = val1 === val2 && val1 !== '';
-
-                    rules.length.style.color = hasLength ? 'green' : 'red';
-                    rules.uppercase.style.color = hasUpper ? 'green' : 'red';
-                    rules.lowercase.style.color = hasLower ? 'green' : 'red';
-                    rules.number.style.color = hasNumber ? 'green' : 'red';
-                    rules.match.style.color = isMatch ? 'green' : 'red';
-
-                    return hasLength && hasUpper && hasLower && hasNumber && isMatch;
-                }
-
-                pass1.addEventListener('input', updatePasswordRules);
-                pass2.addEventListener('input', updatePasswordRules);
-
-                document.querySelector('form').addEventListener('submit', function(e) {
-                    if (!updatePasswordRules()) {
-                        e.preventDefault();
-                        alert("Please meet all password requirements.");
-                    }
-                });
-
-                // Show/hide password toggle
-                document.querySelectorAll('.toggle-password').forEach(btn => {
-                    btn.addEventListener('click', function () {
-                        const targetId = this.getAttribute('data-target');
-                        const input = document.getElementById(targetId);
-                        if (input.type === 'password') {
-                            input.type = 'text';
-                            this.textContent = '🫣'; // change icon
-                        } else {
-                            input.type = 'password';
-                            this.textContent = '🤔';
+                    document.querySelector('form').addEventListener('submit', function(e) {
+                        if (!updatePasswordRules()) {
+                            e.preventDefault();
+                            alert("Please meet all password requirements.");
                         }
                     });
-                });
-                </script>
-                HTML;
-                break;
+
+                    // Show/hide password toggle
+                    document.querySelectorAll('.toggle-password').forEach(btn => {
+                        btn.addEventListener('click', function () {
+                            const targetId = this.getAttribute('data-target');
+                            const input = document.getElementById(targetId);
+                            if (input.type === 'password') {
+                                input.type = 'text';
+                                this.textContent = '🫣'; // change icon
+                            } else {
+                                input.type = 'password';
+                                this.textContent = '🤔';
+                            }
+                        });
+                    });
+                    </script>
+                    HTML;
+                    break;
 
 
 
@@ -402,17 +411,29 @@ if (!function_exists('formGenerator'))
             
                 // Image cover
                 case 'member_image':
-                    if (($option?->image??null) === null) {
-                        echo '<div class="alert alert-info font-weight-bold">You have not set this field in "Form Settings"</div>'; // Anda belum mengantur ruas ini pada "Pengaturan Form"
+                    if (($option?->image ?? null) === null) {
+                        echo '<div class="alert alert-info font-weight-bold">You have not set this field in "Form Settings"</div>';
                     } else {
                         if (!isset($record['member_image'])) {
                             echo <<<HTML
-                            <input type="file" name="member_image" placeholder="Enter your {$column['name']}" class="form-control d-block" {$is_required}/>
-                            <small>Maximum photo file size is 2MB</small> <!-- Maksimal ukuran file foto adalah 2MB -->
+                                <input 
+                                    type="file" 
+                                    name="member_image" 
+                                    accept="image/jpeg, image/png, image/jpg, image/webp" 
+                                    placeholder="Enter your {$column['name']}" 
+                                    class="form-control d-block" 
+                                    {$is_required} 
+                                />
+                                <small>Maximum photo file size is 2MB. Allowed types: jpg, jpeg, png, webp.</small>
                             HTML;
                         } else {
-                            $image = Storage::images()->isExists('persons/' . $record['member_image']) ? $record['member_image'] : 'avatar.jpg';
-                            echo '<img class="d-block"src="' . SWB . 'lib/minigalnano/createthumb.php?filename=images/persons/' . $image . '&width=120"/>';
+                            $filename = basename($record['member_image']); // prevent path traversal
+                            $safeImage = Storage::images()->isExists('persons/' . $filename) ? $filename : 'avatar.jpg';
+
+                            // escape output
+                            $imageUrl = htmlspecialchars(SWB . 'lib/minigalnano/createthumb.php?filename=images/persons/' . rawurlencode($safeImage) . '&width=120');
+
+                            echo '<img class="d-block" src="' . $imageUrl . '" alt="Member Image" />';
                         }
                     }
                     break;
@@ -423,14 +444,14 @@ if (!function_exists('formGenerator'))
                     }
                     echo <<<HTML
                     <br>
-                    <small>Email</small>
-                    <input type="email" 
+                    <input type="email"
+                        value="{$defaultValue}"
                         placeholder="Enter your {$column['name']}" 
                         name="form[{$key}]" 
                         id="member_email" 
                         class="form-control" 
                         {$is_required} 
-                        pattern="^[a-zA-Z0-9._%+-]+@(student\\.)?laverdad\\.edu\\.ph$"
+                        pattern="^[a-zA-Z0-9._%+\-]+@(student\\.)?laverdad\\.edu\\.ph$"
                         title="Only laverdad.edu.ph or student.laverdad.edu.ph emails are allowed">
 
                     <div id="email-error" style="color:red; font-size:small;"></div>
@@ -522,13 +543,16 @@ if (!function_exists('formGenerator'))
             } else {
                 echo '<div class="form-group">
                     <input type="hidden" name="action" value="acc"/>
-                    <button class="btn btn-success" type="submit" name="acc">Approve</button> <!-- Setujui -> Approve -->
+                    <button class="btn btn-success" type="submit" name="acc">Approve 1</button> <!-- Setujui -> Approve -->
                     <a class="btn btn-danger" href="' .  pluginUrl(['section' => 'view_detail', 'member_id' => $_GET['member_id']??0, 'headless' => 'yes', 'action' => 'delete_reg']) . '">Delete</a> <!-- Hapus -> Delete -->
                 </div>';
             }
             // if (strpos($actionUrl, 'admin') === false) {
             //     echo '<strong><em class="text-danger">*</em> ) required field</strong>';
             // }
+
+            
+
         }
         
         echo '</form>';

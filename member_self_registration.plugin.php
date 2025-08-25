@@ -28,11 +28,11 @@ $plugin->registerMenu('membership', 'Online Registration', __DIR__ . '/pages/mem
 
 // Get active schema from database
 if (Schema::hasTable($table = 'self_registration_schemas')) {
-    $activeSchema = DB::getInstance()->query('select id,name from ' . $table . ' where status =  1');
-
-    if ($activeSchema->rowCount()) {
-        $data = $activeSchema->fetchObject();
-        $plugin->registerMenu('opac', $data->name, __DIR__ . DS . 'pages' . DS . 'opac' . DS . 'index.php');
+    $schemas = DB::getInstance()->query('select id,name from ' . $table . ' where status =  1');
+    
+    while ($schema = $schemas->fetchObject()) {
+        $slug = strtolower(str_replace(' ', '_', $schema->name));
+        $plugin->registerMenu('opac', $schema->name, __DIR__ . DS . 'pages' . DS . 'opac' . DS . 'index.php', $slug);
     }
 }
 

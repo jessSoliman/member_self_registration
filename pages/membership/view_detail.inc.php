@@ -1,20 +1,44 @@
 <?php
 use SLiMS\Plugins;
+
 defined('INDEX_AUTH') or die('Direct access is not allowed!');
 
-$schema = $activeSchema->fetchObject();
-$table_name = strtolower(trim(str_replace(' ', '_', $schema->name)));
+// Buffer the output so we can assign it to $content
+ob_start();
 
-Plugins::getInstance()->execute('member_self_before_preview_detail', ['schema' => $schema, 'table_name' => $table_name]);
+// Loop through all active schemas
+while ($schema = $activeSchema->fetchObject()) {
+    $table_name = strtolower(trim(str_replace(' ', '_', $schema->name)));
 
-$record = \SLiMS\DB::getInstance()->prepare('select * from self_registration_' . $table_name . ' where member_id = ?');
-$record->execute([$_GET['member_id']]);
+    Plugins::getInstance()->execute('member_self_before_preview_detail', [
+        'schema' => $schema,
+        'table_name' => $table_name
+    ]);
 
-// Retrive all column detail in member table
-// $memberSchema = Schema::table('member')->columns($detail = true);
+    // Fetch the member data from corresponding schema table
+    $record = \SLiMS\DB::getInstance()->prepare(
+        'SELECT * FROM self_registration_' . $table_name . ' WHERE member_id = ?'
+    );
+    $record->execute([$_GET['member_id'] ?? 0]);
+    $data = $record->fetch(PDO::FETCH_ASSOC);
 
-$content = formGenerator($schema, $record->fetch(PDO::FETCH_ASSOC), pluginUrl(['acc_member' => 'yes']));
 
-// include the page template
-require SB.'/admin/'.$sysconf['admin_template']['dir'].'/notemplate_page_tpl.php';
+    if ($data) {
+        echo 'hello';
+        echo '<h3>' . htmlspecialchars($schema->name) . '</h3>';
+        echo formGenerator($schema, $data, pluginUrl(['acc_member' => 'yes']));
+        echo '<hr>';
+    }
+}
+
+// If no data was found
+if (!isset($data) || !$data) {
+    echo '<p>No data found for member ID: ' . htmlspecialchars($_GET['member_id'] ?? '') . '</p>';
+}
+
+// Assign output to $content
+$content = ob_get_clean();
+
+// Include the template (this uses $content)
+require SB . '/admin/' . $sysconf['admin_template']['dir'] . '/notemplate_page_tpl.php';
 exit;

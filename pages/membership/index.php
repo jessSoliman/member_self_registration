@@ -86,24 +86,40 @@ if (!isset($_GET['headless'])) {
                     </div>
                 <?php else: ?>
                     <?php
-                    $activeSchemaData = getActiveSchemaData();
-                    $path = trim(strtolower(str_replace(' ', '_', $activeSchemaData->name)));
+                    $activeSchemas = getActiveSchemaData();
                     ?>
                     <a href="<?= pluginUrl(reset: true) ?>" class="btn btn-primary"><i class="fa fa-list"></i> Member List</a>
-                    <a target="_blank" href="<?= SWB . '?p=' . $path ?>" class="notAJAX btn btn-success"><i class="fa fa-link"></i> Open Form in OPAC</a>
-                    <a href="<?= pluginUrl(['section' => 'form_config']) ?>" class="btn btn-outline-secondary"><i class="fa fa-cog"></i> Form Settings</a>
-                    <?php if ($section !== 'list'): ?>
-                    <a href="<?= pluginUrl(['section' => 'list']) ?>" class="btn btn-outline-secondary"><i class="fa fa-list"></i> Scheme List</a>
-                    <?php elseif ($section === 'list'): ?>
-                    <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
-                            <i class="fa fa-file"></i> New Scheme
-                        </button>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" href="<?= pluginUrl(['section' => 'add_schema']) ?>"><i class="fa fa-plus"></i> Add</a>
-                            <a class="dropdown-item openPopUp notAJAX" title="Import" href="<?= pluginUrl(['section' => 'import_schema', 'headless' => 'yes']) ?>"><i class="fa fa-download"></i> Import</a>
+
+                    <?php if (!empty($activeSchemas)): ?>
+                        <div class="dropdown d-inline">
+                            <button class="btn btn-success dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
+                                <i class="fa fa-link"></i> Open Form in OPAC
+                            </button>
+                            <div class="dropdown-menu">
+                                <?php foreach ($activeSchemas as $schema): ?>
+                                    <?php $path = trim(strtolower(str_replace(' ', '_', $schema->name))); ?>
+                                    <a class="dropdown-item notAJAX" target="_blank" href="<?= SWB . '?p=' . $path ?>">
+                                        <i class="fa fa-external-link-alt"></i> <?= htmlspecialchars($schema->name) ?>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
-                    </div>
+                    <?php endif; ?>
+
+                    <a href="<?= pluginUrl(['section' => 'form_config']) ?>" class="btn btn-outline-secondary"><i class="fa fa-cog"></i> Form Settings</a>
+
+                    <?php if ($section !== 'list'): ?>
+                        <a href="<?= pluginUrl(['section' => 'list']) ?>" class="btn btn-outline-secondary"><i class="fa fa-list"></i> Scheme List</a>
+                    <?php elseif ($section === 'list'): ?>
+                        <div class="dropdown d-inline">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
+                                <i class="fa fa-file"></i> New Scheme
+                            </button>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="<?= pluginUrl(['section' => 'add_schema']) ?>"><i class="fa fa-plus"></i> Add</a>
+                                <a class="dropdown-item openPopUp notAJAX" title="Import" href="<?= pluginUrl(['section' => 'import_schema', 'headless' => 'yes']) ?>"><i class="fa fa-download"></i> Import</a>
+                            </div>
+                        </div>
                     <?php endif; ?>
                 <?php endif; ?>
             </div>
