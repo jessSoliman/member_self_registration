@@ -39,5 +39,5 @@ foreach ($schemas as $schema) {
 }
 
 if (!$found) {
-    echo '<div class="alert alert-danger">Form tidak ditemukan atau tidak tersedia.</div>';
+    echo '<div class="alert alert-danger">Form not found or unavailable.</div>';
 }
