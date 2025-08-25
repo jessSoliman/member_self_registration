@@ -3,56 +3,59 @@ use SLiMS\Plugins;
 
 defined('INDEX_AUTH') or die('Direct access is not allowed!');
 
-// create datagrid
-$datagrid = new simbio_datagrid();
+// Fetch all active schemas
+while ($data = $activeSchema->fetchObject()) {
+    echo '<h3>' . htmlspecialchars($data->name) . '</h3>'; // Schema name as heading
 
-$data = $activeSchema->fetchObject();
-$structure = json_decode($data->structure, true);
-$structure = array_merge(array_values(array_filter($structure, function($column) {
-    return in_array($column['field'], ['member_id','member_name']);
-})), [['name' => _('Input Date'), 'field' => 'created_at']]);
+    // Create new datagrid instance for each schema
+    $datagrid = new simbio_datagrid();
 
-$columns = [];
-$columns[] = '`member_id` AS `Aksi`';
+    $structure = json_decode($data->structure, true);
+    $structure = array_merge(array_values(array_filter($structure, function ($column) {
+        return in_array($column['field'], ['member_id', 'member_name']);
+    })), [['name' => _('Input Date'), 'field' => 'created_at']]);
 
-foreach ($structure as $no => $detail) {
-    if ($detail['field'] === 'advance') continue;
+    $columns = [];
+    $columns[] = '`member_id` AS `Action`';
 
-    $columns[] = '`' . $detail['field'] . '` AS `' . $detail['name'] . '`';
+    foreach ($structure as $detail) {
+        if ($detail['field'] === 'advance') continue;
+        $columns[] = '`' . $detail['field'] . '` AS `' . $detail['name'] . '`';
+    }
+
+    // Table name derived from schema name
+    $table_spec = 'self_registration_' . trim(str_replace(' ', '_', strtolower($data->name)));
+    $datagrid->setSQLColumn(...$columns);
+    $datagrid->setSQLorder('created_at DESC');
+
+    // Set callback to render action buttons
+    $datagrid->modifyColumnContent(0, 'callback{setButton}');
+    $datagrid->table_attr = 'class="s-table table"';
+    $datagrid->table_header_attr = 'class="dataListHeader thead-dark" style="font-weight: bold;"';
+    $datagrid->chbox_form_URL = pluginUrl(reset: true);
+    $datagrid->column_width = ['10%', '10%'];
+
+    // Apply keyword filter if provided
+    if (isset($_GET['keywords'])) {
+        $keywords = $dbs->escape_string($_GET['keywords']);
+        $datagrid->setSQLCriteria("(member_id LIKE '%$keywords%' OR member_name LIKE '%$keywords%')");
+    }
+
+    Plugins::getInstance()->execute('member_self_before_datagrid', [
+        'datagrid' => $datagrid,
+        'table_spec' => $table_spec
+    ]);
+
+    // Output datagrid result
+    $datagrid_result = $datagrid->createDataGrid($dbs, $table_spec, 10, false);
+    echo $datagrid_result;
+
+    echo '<hr>'; // Visual separator between schemas
 }
 
-// table spec
-$table_spec = 'self_registration_' . trim(str_replace(' ', '_', strtolower($data->name)));
-
-$datagrid->setSQLColumn(...$columns);
-
-// modify column value
-$datagrid->setSQLorder('created_at DESC');
-
+// Action button render function
 function setButton($dbs, $data)
 {
-    return '<a height="500" title="Detail ' . $data[2] . '" href="' . pluginUrl(['section' => 'view_detail', 'member_id' => $data[0], 'headless' => 'yes']) . '" class="notAJAX openPopUp btn btn-primary"><i class="fa fa-pencil"></i></a>';
+    return '<a height="500" title="Detail ' . htmlspecialchars($data[2]) . '" href="' . pluginUrl(['section' => 'view_detail', 'member_id' => $data[0], 'headless' => 'yes']) . '" class="notAJAX openPopUp btn btn-primary"><i class="fa fa-pencil"></i></a>';
 }
-
-$datagrid->modifyColumnContent(0, 'callback{setButton}');
-
-// set table and table header attributes
-$datagrid->table_attr = 'id="dataList" class="s-table table"';
-$datagrid->table_header_attr = 'class="dataListHeader thead-dark" style="font-weight: bold;"';
-// set delete proccess URL
-$datagrid->chbox_form_URL = pluginUrl(reset: true);
-$datagrid->column_width = ['10%', '10%'];
-
-if (isset($_GET['keywords'])) {
-    $keywords = $dbs->escape_string($_GET['keywords']);
-    $datagrid->setSQLCriteria('(member_id like \'%' . $keywords . '%\' or member_name like \'%' . $keywords . '%\')');
-}
-
-Plugins::getInstance()->execute('member_self_before_datagrid', [
-    'datagrid' => $datagrid,
-    'table_spec' => $table_spec
-]);
-
-// put the result into variables
-$datagrid_result = $datagrid->createDataGrid($dbs, $table_spec, 10, false);
-echo $datagrid_result;
+?>

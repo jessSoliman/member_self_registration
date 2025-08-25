@@ -9,8 +9,8 @@ if (isset($_POST['saveData'])) {
     $mysqlGrammar = new ReflectionClass(new Mysql);
 
     if (empty($_POST['name']??'')) {
-        exit(toastr('Nama skema tidak boleh kosong!')->warning('Peringatan'));
-    }
+        exit(toastr('Schema name cannot be empty!')->warning('Warning'));
+    }    
 
     // had custom table
     $hadCustomTable = (bool)count(array_filter($_POST['column'], fn($column) => $column['field'] === 'advance'));
@@ -26,7 +26,7 @@ if (isset($_POST['saveData'])) {
     // requirement field
     $isRequirementFieldsExists = (bool)count(array_filter($_POST['column'], fn($column) => in_array($column['field'], ['member_id','member_name','gender'])));
 
-    if (!$isRequirementFieldsExists) exit(toastr('Ruas member_id, member_name dan gender tidak ditemukan')->error('Galat'));
+    if (!$isRequirementFieldsExists) exit(toastr('Fields member_id, member_name, and gender not found')->error('Error'));
 
     // Get private property without change it
     $property = @array_pop($mysqlGrammar->getProperties(ReflectionProperty::IS_PRIVATE));

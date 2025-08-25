@@ -3,11 +3,15 @@ use SLiMS\Table\Schema;
 
 defined('INDEX_AUTH') or die('Direct access is not allowed!');
 
-$columns = implode('', array_merge(array_map(function($item) {
-    return '<option value="' . $item . '">' . $item . '</option>';
-}, array_values(array_filter(Schema::table('member')->columns(), function($column) {
-    if (!preg_match('/(expire|regis|since|notes|input|last_|is_)/', $column)) return true;
-}))), ['<option value="advance">Ruas Mahir</option>']));
+$columns = implode('', array_merge(
+    array_map(function($item) {
+        return '<option value="' . $item . '">' . $item . '</option>';
+    }, array_values(array_filter(Schema::table('member')->columns(), function($column) {
+        if (!preg_match('/(expire|regis|since|notes|input|last_|is_)/', $column)) return true;
+    }))),
+    ['<option value="advance">Advanced Field</option>']
+));
+
 
 // create new instance
 $form = new simbio_form_table_AJAX('mainForm', pluginUrl(['section' => 'add_schema']), 'post');
@@ -18,180 +22,227 @@ $form->table_header_attr = 'class="alterCell"';
 $form->table_content_attr = 'class="alterCell2"';
 
 $form->addHidden('action', 'create_schema');
-$form->addTextField('text', 'name', '<strong>Nama*</strong>', '', 'rows="1" class="form-control"');
+$form->addTextField('text', 'name', '<strong>Name*</strong>', '', 'rows="1" class="form-control"');
 
-$form->addAnything('<strong>Informasi</strong>', <<<HTML
+$form->addAnything('<strong>Information</strong>', <<<HTML
 <div class="d-flex flex-column">
-    <label><strong>Judul Formulir</strong></label>
+    <label><strong>Form Title</strong></label>
     <input type="text" name="info[title]" class="form-control col-3"/>
-    <label><strong>Lain-lain</strong></label>
-    <p>Pemberitahuan mengenai prasayrat, informasi lanjutan pra/pasca pendaftaran</p>
+    <label><strong>Others</strong></label>
+    <p>Notification regarding prerequisites, pre/post registration follow-up information</p>
     <div id="editor" class="col-8">
         <div id="toolbarContainer"></div>
         <div id="contentDesc" class="rounded-lg px-3 noAutoFocus" style="background-color: white; min-height: 200px"></div>
     </div>
-    <label><strong>Letak</strong></label>
+    <label><strong>Place</strong></label>
     <select class="form-control col-2" name="info[position]">
-        <option value="top">Atas</option>
-        <option value="bottom">Bawah</option>
+        <option value="top">Top</option>
+        <option value="bottom">Bottom</option>
     </select>
 </div>
 HTML);
 
-$form->addAnything('<strong>Struktur</strong>', <<<HTML
+$form->addAnything('<strong>Structure</strong>', <<<HTML
 <div class="d-flex flex-column">
-    <label><strong>Ruas</strong></label>
-    <p>Tentukan ruas-ruas apa saja yang akan dijadikan isian pada formulir perndaftaran nanti</p>
+    <label><strong>Section</strong></label>
+    <p>Determine which fields will be filled in on the registration form later.</p>
     <hr>
     <div id="editableArea">
         <div class="d-flex flex-column col-12">
-            <label id="label-1"><strong>Ruas <b id="columnName1"></b></strong></label>
+            <label id="label-1"><strong>Section <b id="columnName1"></b></strong></label>
             <div class="d-flex flex-row">
-                <input type="text" class="columnName form-control col-4 noAutoFocus" data-label="1" name="column[1][name]" placeholder="Label yang akan muncul di formulir"/>
+                <input type="text" class="columnName form-control col-4 noAutoFocus" data-label="1" name="column[1][name]" placeholder="Label that will appear on the form"/>
                 <select class="form-control col-1 noAutoFocus" name="column[1][is_required]">
-                    <option value="1">Wajib Diisi</option>
-                    <option value="0">Opsional</option>
+                    <option value="1">Required fields</option>
+                    <option value="0">Optional</option>
                 </select>
                 <select class="form-control col-3 noAutoFocus" name="column[1][field]" data-row="1">
-                    <option value="">Pilih Kolom Database</option>
+                    <option value="">Select Database Column</option>
                     {$columns}
                 </select>
+                <p>Note: This feild will not work to advance field dropdown list</p>
             </div>
             <div id="advForm1" class="d-none flex-column my-3">
                 <div class="d-block">
-                    <label><strong>Ruas Mahir</strong></label>
+                    <label><strong>Advanced Fields</strong></label>
                 </div>
                 <div class="d-flex flex-row">
-                    <input type="text" class="form-control col-6 noAutoFocus" name="column[1][advfield]" placeholder="Nama kolom pada database"/>
+                    <input type="text" class="form-control col-6 noAutoFocus" name="column[1][advfield]" placeholder="Column name in database"/>
                     <select class="form-control col-4 noAutoFocus" name="column[1][advfieldtype]">
-                        <option value="">Pilih</option>
-                        <option value="int">Angka</option>
-                        <option value="varchar">Teks Singkat</option>
-                        <option value="text">Teks Paragraf</option>
-                        <option value="enum">Daftar</option>
-                        <option value="enum_radio">Daftar Radio</option>
-                        <option value="text_multiple">Pilihan Ganda</option>
+                        <option value="">Select</option>
+                        <option value="int">Number</option>
+                        <option value="varchar">Short Text</option>
+                        <option value="text">Paragraph Text</option>
+                        <option value="enum">Dropdown List</option>
+                        <option value="enum_radio">Radio List</option>
+                        <option value="text_multiple">Multiple Choice</option>
                     </select>
                 </div>
             </div>
         </div>
     </div>
-    <button row="1" class="addRow notAJAX btn btn-success btn-sm col-2 my-3">Tambah Selanjutnya</button>
+    <button row="1" class="addRow notAJAX btn btn-success btn-sm col-2 my-3">Add Next</button>
 </div>
 HTML);
 
 echo $form->printOut();
 ?>
+
 <script>
-    let area = $('#editableArea')
-    let addRow = $('.addRow')
-    let template = `
-    <div id="detailrow{column}" class="d-flex flex-column col-12">
-        <label id="label-1"><strong>Ruas <b id="columnName{column}"></b></strong></label>
+let area = $('#editableArea')
+let addRow = $('.addRow')
+let template = 
+`<div id="detailrow{column}" class="d-flex flex-column col-12">
+    <label id="label-{column}"><strong>Field <b id="columnName{column}"></b></strong></label>
+    <div class="d-flex flex-row">
+        <input type="text" class="columnName form-control col-4 noAutoFocus" data-label="{column}" name="column[{column}][name]" placeholder="Label that will appear on the form"/>
+        <select class="form-control col-1 noAutoFocus" name="column[{column}][is_required]">
+            <option value="1">Required</option>
+            <option value="0">Optional</option>
+        </select>
+        <select class="form-control col-3 noAutoFocus" name="column[{column}][field]" data-row="{column}">
+            <option value="">Select Database Column</option>
+            <?= $columns ?>
+        </select>
+        <button class="deleteRow notAJAX btn btn-danger" data-remove="{column}"><i class="fa fa-trash"></i></button>
+    </div>
+    <div id="advForm{column}" class="d-none flex-column my-3">
+        <div class="d-block">
+            <span><strong>Advanced Field</strong></span>
+        </div>
         <div class="d-flex flex-row">
-            <input type="text" class="columnName form-control col-4 noAutoFocus" data-label="{column}" name="column[{column}][name]" placeholder="Label yang akan muncul di formulir"/>
-            <select class="form-control col-1 noAutoFocus" name="column[{column}][is_required]">
-                <option value="1">Wajib Diisi</option>
-                <option value="0">Opsional</option>
+            <input type="text" class="form-control col-6 noAutoFocus" name="column[{column}][advfield]" placeholder="Column name in database"/>
+            <select class="form-control col-4 noAutoFocus advFieldType" data-column="{column}" name="column[{column}][advfieldtype]">
+                <option value="">Select</option>
+                <option value="int">Number</option>
+                <option value="varchar">Short Text</option>
+                <option value="text">Paragraph Text</option>
+                <option value="enum">Dropdown List</option>
+                <option value="enum_radio">Radio List</option>
+                <option value="text_multiple">Multiple Choice</option>
             </select>
-            <select class="form-control col-3 noAutoFocus" name="column[{column}][field]" data-row="{column}">
-                <option value="">Pilih Kolom Database</option>
-                <?= $columns ?>
-            </select>
-            <button class="deleteRow notAJAX btn btn-danger" data-remove="{column}"><i class="fa fa-trash"></i></button>
         </div>
-        <div id="advForm{column}" class="d-none flex-column my-3">
-            <div class="d-block">
-                <span><strong>Ruas Mahir</strong></span>
-            </div>
-            <div class="d-flex flex-row">
-                <input type="text" class="form-control col-6 noAutoFocus" name="column[{column}][advfield]" placeholder="Nama kolom pada database"/>
-                <select class="form-control col-4 noAutoFocus" name="column[{column}][advfieldtype]">
-                    <option value="">Pilih</option>
-                    <option value="int">Angka</option>
-                    <option value="varchar">Teks Singkat</option>
-                    <option value="text">Teks Paragraf</option>
-                    <option value="enum">Daftar</option>
-                    <option value="enum_radio">Daftar Radio</option>
-                        <option value="text_multiple">Pilihan Ganda</option>
-                </select>
-            </div>
+        <div id="dropdownOptions{column}" class="dropdown-options mt-2 d-none">
+            <label><strong>Dropdown Options</strong></label>
+            <div class="dropdown-options-container"></div>
+            <button type="button" class="btn btn-sm btn-info mt-1 addDropdownOption" data-column="{column}">Add Option</button>
         </div>
-    </div>`
+    </div>
+</div>`;
 
-    addRow.click(function(e) {
-        e.preventDefault()
-        let nextNumber = parseInt($(this).attr('row')) + 1
-        area.append(template.replace(/\{column\}/g, nextNumber))
-        $(this).attr('row', nextNumber)
-    })
+addRow.click(function(e) {
+    e.preventDefault()
+    let nextNumber = parseInt($(this).attr('row')) + 1
+    area.append(template.replace(/\{column\}/g, nextNumber))
+    $(this).attr('row', nextNumber)
+})
 
-    area.on('keyup', '.columnName', function(){
-        let labelRow = $(this).data('label')
-        $(`#columnName${labelRow}`).html($(this).val())
-    })
+area.on('keyup blur', '.columnName', function(){
+    let labelRow = $(this).data('label')
+    $('#columnName' + labelRow).html($(this).val())
+})
 
-    area.on('blur', '.columnName', function(){
-        let labelRow = $(this).data('label')
-        $(`#columnName${labelRow}`).html($(this).val())
-    })
+area.on('change', 'select', function(){
+    let column = $(this).data('row')
+    if (!column) return;
 
-    area.on('change', 'select', function(){
-        let column = $(this).data('row')
+    if ($(this).val() === 'advance') {
+        $('#advForm' + column).removeClass('d-none').addClass('d-flex')
+    } else {
+        $('#advForm' + column).addClass('d-none').removeClass('d-flex')
+        $('input[name="column[' + column + '][advfield]"]').val('')
+        $('select[name="column[' + column + '][advfieldtype]"]').val('')
+        $('#dropdownOptions' + column).addClass('d-none').find('.dropdown-options-container').empty()
+    }
+})
 
-        if ($(this).val() === 'advance') {
-            $(`#advForm${column}`).addClass('d-flex')
-        } else {
-            $(`#advForm${column}`).removeClass('d-flex')
-            $(`input[name="column[${column}][advfield]"]`).val('')
-            $(`select[name="column[${column}][advfieldtype]"]`).val('')
-        }
-    })
+area.on('change', '.advFieldType', function(){
+    let column = $(this).data('column')
+    let type = $(this).val()
 
-    area.on('click', '.deleteRow', function(){
-        let column = $(this).data('remove')
-        $(`#detailrow${column}`).remove()
-    })
+    let dropdownContainer = $('#dropdownOptions' + column)
+    if (type === 'enum') {
+        dropdownContainer.removeClass('d-none')
+    } else {
+        dropdownContainer.addClass('d-none').find('.dropdown-options-container').empty()
+    }
+})
 
-    area.on('click', 'input,select', function(e){
-        e.preventDefault()
-    })
+area.on('click', '.addDropdownOption', function(){
+    let column = $(this).data('column')
+    let container = $('#dropdownOptions' + column + ' .dropdown-options-container')
+    let index = container.children().length + 1
 
-    $(document).ready(function(){
-        let editorInstance = '';
+    container.append(
+        `<div class="input-group mb-1 col-6">
+            <input type="text" name="column[${column}][options][]" class="form-control form-control-sm" placeholder="Option ${index}"/>
+            <div class="input-group-append">
+                <button type="button" class="btn btn-danger btn-sm removeDropdownOption">&times;</button>
+            </div>
+        </div>`
+    )
+})
 
-        $('#mainForm').submit(function() {
-            top.toastr.info('Tunggu hingga proses selesai','Info'); 
+area.on('click', '.removeDropdownOption', function(){
+    $(this).closest('.input-group').remove()
+})
+
+area.on('click', '.deleteRow', function(){
+    let column = $(this).data('remove')
+    $('#detailrow' + column).remove()
+})
+
+$(document).ready(function(){
+    let editorInstance = ''
+
+    DecoupledEditor
+        .create(document.querySelector('#contentDesc'), {  
+            toolbar: ['heading', 'bold', 'italic', 'link', 'numberedList', 'bulletedList']
+        })
+        .then(editor => {
+            const toolbarContainer = document.querySelector('#toolbarContainer')
+            toolbarContainer.appendChild(editor.ui.view.toolbar.element)
+            editorInstance = editor
+        })
+        .catch(error => {
+            console.error(error)
         })
 
-        DecoupledEditor
-            .create(document.querySelector('#contentDesc'),{  
-                toolbar: ['heading','bold','italic','link','numberedList','bulletedList']
+    $('#mainForm').submit(function(){
+        // append editor content
+        $(this).append('<textarea name="info[desc]" class="d-none">' + editorInstance.getData() + '</textarea>')
 
-            })
-            .then( editor => {
-                const toolbarContainer = document.querySelector('#toolbarContainer');
-                toolbarContainer.appendChild( editor.ui.view.toolbar.element );
-                editorInstance = editor
-            })
-            .catch( error => {
-                console.log(error);
-            });
+        // convert enum options to single string
+        $('.advFieldType').each(function(){
+            let column = $(this).data('column')
+            let type = $(this).val()
 
-        // when form submited retrive content
-        // and put into hidden textarea
-        $('#mainForm').submit(function(){
-            $(this).append('<textarea name="info[desc]" class="d-none">' + editorInstance.getData() + '</textarea>');
+            if (type === 'enum') {
+                let fieldName = $(`input[name="column[${column}][advfield]"]`).val().trim()
+                let options = []
+
+                $(`input[name="column[${column}][options][]"]`).each(function(){
+                    let val = $(this).val().trim()
+                    if (val !== '') {
+                        options.push(val)
+                    }
+                })
+
+                let advfieldValue = fieldName + ',' + options.join('|')
+                $(`input[name="column[${column}][advfield]"]`).val(advfieldValue)
+            }
         })
+    })
 
-        $('#dataList > tbody').prepend(`
+    // prepend warning row
+    $('#dataList > tbody').prepend(`
         <tr>
             <td colspan="3">
                 <div class="alert alert-warning" role="alert">
-                    <h4 class="alert-heading">Peringatan</h4>
-                    <p>Skema yang sudah dibuat tidak dapat diubah. Pastikan semua telah terisi dengan benar.</p>
+                    <h4 class="alert-heading">Warning</h4>
+                    <p>The created scheme cannot be changed. Make sure everything is filled in correctly.</p>
                 </div>
             </td>
-        </tr>`) 
-    })
+        </tr>`)
+})
 </script>

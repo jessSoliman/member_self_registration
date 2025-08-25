@@ -177,7 +177,7 @@ if ($hadCustomTable) {
     }
 }
 
-toastr('Berhasil mengimport skema')->success();
+toastr('The Form was successfully imported')->success();
 echo <<<HTML
 <script>
     top.jQuery.colorbox.close();

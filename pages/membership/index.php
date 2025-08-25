@@ -10,20 +10,20 @@ use SLiMS\Table\Schema;
 
 defined('INDEX_AUTH') OR die('Direct access not allowed!');
 
-// IP based access limitation
+// IP-based access limitation
 require LIB . 'ip_based_access.inc.php';
 do_checkIP('smc');
 do_checkIP('smc-membership');
 // start the session
 require SB . 'admin/default/session.inc.php';
-// set dependency
+// set dependencies
 require SIMBIO . 'simbio_GUI/table/simbio_table.inc.php';
 require SIMBIO . 'simbio_GUI/form_maker/simbio_form_table_AJAX.inc.php';
 require SIMBIO . 'simbio_GUI/paging/simbio_paging.inc.php';
 require SIMBIO . 'simbio_DB/datagrid/simbio_dbgrid.inc.php';
-// end dependency
+// end dependencies
 
-// privileges checking
+// privilege checking
 $can_read = utility::havePrivilege('membership', 'r');
 
 if (!$can_read) {
@@ -38,8 +38,8 @@ $schemas = DB::getInstance()->query('select * from self_registration_schemas');
 $schemaById = DB::getInstance()->prepare('select * from self_registration_schemas where id = ?');
 $activeSchema = DB::getInstance()->query('select * from self_registration_schemas where status = 1');
 
-/*---- Http Request Process ----*/
-// an action for handle request by routes
+/*---- HTTP Request Process ----*/
+// action handler for routing requests
 $action = $_POST['action']??$_GET['action']??null;
 
 // route list
@@ -57,9 +57,9 @@ $routes = [
 
 $params = $routes[$action]??null;
 if ($params !== null) action($action, $params);
-/*---- End of Http Request Process ----*/
+/*---- End of HTTP Request Process ----*/
 
-$page_title = 'Daftar Online';
+$page_title = 'Online Registration';
 
 if (!isset($_GET['headless'])) {
 ?>
@@ -77,33 +77,49 @@ if (!isset($_GET['headless'])) {
                 <?php if ($activeSchema->rowCount() < 1): ?>
                     <div class="dropdown">
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
-                            <i class="fa fa-file"></i> Skema Baru
+                            <i class="fa fa-file"></i> New Scheme
                         </button>
                         <div class="dropdown-menu">
-                            <a class="dropdown-item" href="<?= pluginUrl(['section' => 'add_schema']) ?>"><i class="fa fa-plus"></i> Tambah</a>
-                            <a class="dropdown-item openPopUp notAJAX" title="Impor" href="<?= pluginUrl(['section' => 'import_schema', 'headless' => 'yes']) ?>"><i class="fa fa-download"></i> Impor</a>
+                            <a class="dropdown-item" href="<?= pluginUrl(['section' => 'add_schema']) ?>"><i class="fa fa-plus"></i> Add</a>
+                            <a class="dropdown-item openPopUp notAJAX" title="Import" href="<?= pluginUrl(['section' => 'import_schema', 'headless' => 'yes']) ?>"><i class="fa fa-download"></i> Import</a>
                         </div>
                     </div>
                 <?php else: ?>
                     <?php
-                    $activeSchemaData = getActiveSchemaData();
-                    $path = trim(strtolower(str_replace(' ', '_', $activeSchemaData->name)));
+                    $activeSchemas = getActiveSchemaData();
                     ?>
-                    <a href="<?= pluginUrl(reset: true) ?>" class="btn btn-primary"><i class="fa fa-list"></i> Daftar Anggota</a>
-                    <a target="_blank" href="<?= SWB . '?p=' . $path ?>" class="notAJAX btn btn-success"><i class="fa fa-link"></i> Buka Form di OPAC</a>
-                    <a href="<?= pluginUrl(['section' => 'form_config']) ?>" class="btn btn-outline-secondary"><i class="fa fa-cog"></i> Pengaturan Form</a>
-                    <?php if ($section !== 'list'): ?>
-                    <a href="<?= pluginUrl(['section' => 'list']) ?>" class="btn btn-outline-secondary"><i class="fa fa-list"></i> Daftar Skema</a>
-                    <?php elseif ($section === 'list'): ?>
-                    <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
-                            <i class="fa fa-file"></i> Skema Baru
-                        </button>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" href="<?= pluginUrl(['section' => 'add_schema']) ?>"><i class="fa fa-plus"></i> Tambah</a>
-                            <a class="dropdown-item openPopUp notAJAX" title="Impor" href="<?= pluginUrl(['section' => 'import_schema', 'headless' => 'yes']) ?>"><i class="fa fa-download"></i> Impor</a>
+                    <a href="<?= pluginUrl(reset: true) ?>" class="btn btn-primary"><i class="fa fa-list"></i> Member List</a>
+
+                    <?php if (!empty($activeSchemas)): ?>
+                        <div class="dropdown d-inline">
+                            <button class="btn btn-success dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
+                                <i class="fa fa-link"></i> Open Form in OPAC
+                            </button>
+                            <div class="dropdown-menu">
+                                <?php foreach ($activeSchemas as $schema): ?>
+                                    <?php $path = trim(strtolower(str_replace(' ', '_', $schema->name))); ?>
+                                    <a class="dropdown-item notAJAX" target="_blank" href="<?= SWB . '?p=' . $path ?>">
+                                        <i class="fa fa-external-link-alt"></i> <?= htmlspecialchars($schema->name) ?>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
-                    </div>
+                    <?php endif; ?>
+
+                    <a href="<?= pluginUrl(['section' => 'form_config']) ?>" class="btn btn-outline-secondary"><i class="fa fa-cog"></i> Form Settings</a>
+
+                    <?php if ($section !== 'list'): ?>
+                        <a href="<?= pluginUrl(['section' => 'list']) ?>" class="btn btn-outline-secondary"><i class="fa fa-list"></i> Scheme List</a>
+                    <?php elseif ($section === 'list'): ?>
+                        <div class="dropdown d-inline">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
+                                <i class="fa fa-file"></i> New Scheme
+                            </button>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="<?= pluginUrl(['section' => 'add_schema']) ?>"><i class="fa fa-plus"></i> Add</a>
+                                <a class="dropdown-item openPopUp notAJAX" title="Import" href="<?= pluginUrl(['section' => 'import_schema', 'headless' => 'yes']) ?>"><i class="fa fa-download"></i> Import</a>
+                            </div>
+                        </div>
                     <?php endif; ?>
                 <?php endif; ?>
             </div>
@@ -115,7 +131,7 @@ if (!isset($_GET['headless'])) {
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle-fill mr-2" viewBox="0 0 16 16">
             <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
         </svg>
-        Anda belum menentukan skema mana yang akan digunakan
+        You have not determined which scheme will be used.
     </strong>
 </div>
 <?php
